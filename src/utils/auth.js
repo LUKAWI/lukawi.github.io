@@ -1,72 +1,70 @@
 /**
- * 开发者登录认证工具
- * 简单的前端密码验证（不适用于高安全场景）
+ * Authentication Utility Module
+ * Simple password-based authentication for admin features
  */
 
-const sha256 = async (message) => {
-  const msgBuffer = new TextEncoder().encode(message)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-  return hashHex
-}
-
-const PASSWORD_HASH = 'e9ae0fd97bb62958cc1731e44f5ab37b9d8f6eb2a8bf15e8c8e935676f237f6d'
-const AUTH_KEY = 'dev_login_status'
-
-export const verifyPassword = async (password) => {
-  const hash = await sha256(password)
-  return hash === PASSWORD_HASH
-}
+const ADMIN_PASSWORD = 'admin123'
+const AUTH_STORAGE_KEY = 'admin_auth'
 
 /**
- * 登录
- * 将登录状态保存到 localStorage
- */
-export const login = () => {
-  const loginData = {
-    isLoggedIn: true,
-    loginTime: Date.now(),
-  }
-  localStorage.setItem(AUTH_KEY, JSON.stringify(loginData))
-}
-
-/**
- * 登出
- * 清除 localStorage 中的登录状态
- */
-export const logout = () => {
-  localStorage.removeItem(AUTH_KEY)
-}
-
-/**
- * 检查是否已登录
- * @returns {boolean} - 是否已登录
+ * Check if user is logged in
+ * @returns {boolean}
  */
 export const isLoggedIn = () => {
-  const authData = localStorage.getItem(AUTH_KEY)
-  if (!authData) return false
-  
   try {
-    const { isLoggedIn, loginTime } = JSON.parse(authData)
-    return isLoggedIn === true
+    const authData = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!authData) return false
+    
+    const { timestamp, authenticated } = JSON.parse(authData)
+    
+    // Token expires after 24 hours
+    const now = Date.now()
+    if (now - timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+      return false
+    }
+    
+    return authenticated === true
   } catch {
     return false
   }
 }
 
 /**
- * 获取登录时间
- * @returns {number|null} - 登录时间戳
+ * Login with password
+ * @param {string} password
+ * @returns {boolean} - Whether login was successful
  */
-export const getLoginTime = () => {
-  const authData = localStorage.getItem(AUTH_KEY)
-  if (!authData) return null
-  
-  try {
-    const { loginTime } = JSON.parse(authData)
-    return loginTime
-  } catch {
-    return null
+export const login = (password) => {
+  if (password === ADMIN_PASSWORD) {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+      authenticated: true,
+      timestamp: Date.now(),
+    }))
+    return true
   }
+  return false
+}
+
+/**
+ * Logout
+ */
+export const logout = () => {
+  localStorage.removeItem(AUTH_STORAGE_KEY)
+}
+
+/**
+ * Verify password without logging in
+ * @param {string} password
+ * @returns {boolean}
+ */
+export const verifyPassword = (password) => {
+  return password === ADMIN_PASSWORD
+}
+
+export default {
+  isLoggedIn,
+  login,
+  logout,
+  verifyPassword,
 }

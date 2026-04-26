@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Portfolio - Redirecting...</title>
+  <script>
+    const path = window.location.pathname;
+    const l = window.location;
+    l.replace(
+      l.origin + '/portfolio/?_redirect=' + 
+      encodeURIComponent(path) + 
+      (l.search ? '&_q=' + encodeURIComponent(l.search) : '') +
+      (l.hash ? '&_h=' + encodeURIComponent(l.hash) : '')
+    );
+  </script>
+</head>
+<body>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/portfolio/">
+  </noscript>
+  <p>Redirecting...</p>
+</body>
+</html>

@@ -1,0 +1,10 @@
+- [x] Blog.jsx 中 useRef 已正确导入
+- [x] Experience.jsx 中 useRef 已正确导入
+- [x] Contact.jsx 中 useRef 已正确导入
+- [x] About.jsx 中 fetchPriority 已改为 fetchpriority（小写）
+- [x] 所有组件文件没有缺失的 React hooks 导入
+- [x] 所有 DOM 属性命名符合 React 规范
+- [x] 浏览器控制台无 React 错误和警告
+- [x] 页面所有组件正常渲染
+- [x] 代码实现逻辑未改变
+- [x] 最终展示效果未改变

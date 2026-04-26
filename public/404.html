@@ -7,7 +7,7 @@
     const path = window.location.pathname;
     const l = window.location;
     l.replace(
-      l.origin + '/portfolio/?_redirect=' + 
+      l.origin + '/?_redirect=' + 
       encodeURIComponent(path) + 
       (l.search ? '&_q=' + encodeURIComponent(l.search) : '') +
       (l.hash ? '&_h=' + encodeURIComponent(l.hash) : '')
@@ -16,7 +16,7 @@
 </head>
 <body>
   <noscript>
-    <meta http-equiv="refresh" content="0;url=/portfolio/">
+    <meta http-equiv="refresh" content="0;url=/">
   </noscript>
   <p>Redirecting...</p>
 </body>

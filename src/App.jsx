@@ -145,7 +145,7 @@ function App() {
   }, [])
 
   return (
-    <BrowserRouter basename="/portfolio">
+    <BrowserRouter basename="/">
       <RedirectHandler />
       <Routes>
         <Route path="/" element={

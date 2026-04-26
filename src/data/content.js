@@ -32,16 +32,16 @@ export const content = {
   about: {
     title: 'About Me',
     subtitle: 'Who I Am',
-    description: `我是一名充满热情的全栈开发者，对设计有敏锐的洞察力，热爱创造无缝的用户体验。凭借对现代 Web 技术的专业知识，我构建的应用不仅功能强大，而且视觉效果出色。
+    description: `我是浙江大学电子信息工程专业的大一学生，正处于探索AI与电子工程交叉领域的起点。对人工智能、嵌入式系统和智能硬件充满热情，致力于将AI技术应用于电气工程实践中。
 
-我相信编写干净、可维护的代码并遵循最佳实践。我的方法将技术卓越与创造性思维相结合，提供超越预期的解决方案。`,
+作为一名新生，我保持着强烈的好奇心和求知欲，正在不断学习新知识、掌握新技能。我相信AI时代的工程师不应局限于传统边界，而是应该勇于探索、敢于创新。`,
     skills: [
-      'React / Vue / Angular',
-      'TypeScript / JavaScript',
-      'Node.js / Python',
-      'GSAP / Framer Motion',
-      'UI/UX 设计',
-      'AWS / Docker',
+      'C / Python',
+      'React / JavaScript',
+      '8051 MCU / STM32',
+      '电路设计与分析',
+      'AI 基础与机器学习',
+      '嵌入式系统开发',
     ],
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
   },
@@ -185,17 +185,20 @@ export const content = {
       {
         id: 1,
         title: 'AI+EE',
-        content: 'AI时代的电气工程师，何必只是电气工程师',
+        summary: 'AI时代的电气工程师，何必只是电气工程师',
+        detailedContent: '探索AI技术在电气工程领域的应用，打破传统电气工程师的边界。从智能电网到自动化控制，AI正在重塑电气工程的每一个环节。',
       },
       {
         id: 2,
         title: 'The Future of AI Agent',
-        content: 'XXclaw，是玩具还是未来？',
+        summary: 'XXclaw，是玩具还是未来？',
+        detailedContent: '深入探讨AI Agent的发展趋势和应用前景。从简单的自动化脚本到复杂的智能体系统，AI Agent正在改变我们与计算机交互的方式。',
       },
       {
         id: 3,
         title: 'AI & Me',
-        content: '当新生的芦苇遇见狂风......',
+        summary: '当新生的芦苇遇见狂风......',
+        detailedContent: '一个开发者在AI浪潮中的思考与成长。面对快速变化的技术环境，如何保持学习的热情，如何在不确定性中找到自己的方向。',
       },
     ],
     aiEeIdeas: [

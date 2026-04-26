@@ -5,7 +5,8 @@ import { content } from '../data/content'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { scrollToSection } from '../utils/scrollToSection'
-import { isLoggedIn, login, logout, verifyPassword, getIdeas, saveIdeas, initializeDefaultIdeas, deleteIdea, editIdea } from '../utils/auth'
+import { isLoggedIn, login, logout, verifyPassword } from '../utils/auth'
+import { getIdeas, saveIdea, deleteIdea, editIdea, initializeDefaultIdeas } from '../utils/cloudStorage'
 import Notification from '../components/ui/Notification'
 import PasswordModal from '../components/ui/PasswordModal'
 
@@ -22,32 +23,40 @@ export default function AiEeDirectory() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [newIdea, setNewIdea] = useState({ title: '', content: '' })
+  const [newIdea, setNewIdea] = useState({ title: '', summary: '', content: '' })
   const [editingIdea, setEditingIdea] = useState(null)
-  const [editFormData, setEditFormData] = useState({ title: '', content: '' })
+  const [editFormData, setEditFormData] = useState({ title: '', summary: '', content: '' })
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [ideaToDelete, setIdeaToDelete] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
   
   const pageRef = useRef(null)
 
   // 加载 ideas 的通用函数
-  const loadIdeas = () => {
+  const loadIdeas = async () => {
     const adminStatus = isLoggedIn()
     setIsAdmin(adminStatus)
     
-    const allIdeas = getIdeas()
-    setIdeas(allIdeas)
+    try {
+      const allIdeas = await getIdeas()
+      setIdeas(allIdeas)
+    } catch (error) {
+      console.error('加载 ideas 失败:', error)
+      showNotification('加载想法失败', 'error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // 初始化时加载 ideas 并检查是否需要初始化默认数据
   useEffect(() => {
-    // 首次访问时自动初始化默认 ideas
-    initializeDefaultIdeas(DEFAULT_IDEAS)
-    
-    // 加载 ideas
-    loadIdeas()
+    const init = async () => {
+      await initializeDefaultIdeas(DEFAULT_IDEAS)
+      await loadIdeas()
+    }
+    init()
   }, [])
 
   useEffect(() => {
@@ -115,9 +124,9 @@ export default function AiEeDirectory() {
     setSelectedIdea(null)
   }
 
-  const handleAddIdea = (e) => {
+  const handleAddIdea = async (e) => {
     e.preventDefault()
-    if (!newIdea.title.trim() || !newIdea.content.trim()) {
+    if (!newIdea.title.trim() || !newIdea.summary.trim() || !newIdea.content.trim()) {
       showNotification('请填写完整内容', 'error')
       return
     }
@@ -125,53 +134,62 @@ export default function AiEeDirectory() {
     const ideaToAdd = {
       id: Date.now(),
       title: newIdea.title.trim(),
-      content: newIdea.content.trim(),
+      summary: newIdea.summary.trim(),
+      content: newIdea.summary.trim(),
       detailedContent: newIdea.content.trim(),
       isDefault: false,
       createdAt: Date.now(),
     }
 
-    // 保存所有 ideas（包括新添加的）
-    const updatedIdeas = [...ideas, ideaToAdd]
-    saveIdeas(updatedIdeas)
-    
-    setIdeas(updatedIdeas)
-    setNewIdea({ title: '', content: '' })
-    setIsAddModalOpen(false)
-    showNotification('想法添加成功！', 'success')
+    try {
+      await saveIdea(ideaToAdd)
+      await loadIdeas()
+      setNewIdea({ title: '', summary: '', content: '' })
+      setIsAddModalOpen(false)
+      showNotification('想法添加成功！', 'success')
+    } catch (error) {
+      console.error('添加想法失败:', error)
+      showNotification('添加想法失败，请重试', 'error')
+    }
   }
 
   // 处理编辑 idea
   const handleEditClick = (e, idea) => {
     e.stopPropagation()
     setEditingIdea(idea)
-    setEditFormData({ title: idea.title, content: idea.content })
+    setEditFormData({ 
+      title: idea.title, 
+      summary: idea.summary || idea.content, 
+      content: idea.detailedContent || idea.content 
+    })
     setIsEditModalOpen(true)
   }
 
-  const handleEditIdea = (e) => {
+  const handleEditIdea = async (e) => {
     e.preventDefault()
-    if (!editFormData.title.trim() || !editFormData.content.trim()) {
+    if (!editFormData.title.trim() || !editFormData.summary.trim() || !editFormData.content.trim()) {
       showNotification('请填写完整内容', 'error')
       return
     }
 
     const updatedIdea = {
       title: editFormData.title.trim(),
-      content: editFormData.content.trim(),
+      summary: editFormData.summary.trim(),
+      content: editFormData.summary.trim(),
       detailedContent: editFormData.content.trim(),
     }
 
-    // 使用统一的编辑函数
-    editIdea(editingIdea.id, updatedIdea)
-    
-    // 重新加载 ideas
-    loadIdeas()
-    
-    setEditingIdea(null)
-    setEditFormData({ title: '', content: '' })
-    setIsEditModalOpen(false)
-    showNotification('想法更新成功！', 'success')
+    try {
+      await editIdea(editingIdea.id, updatedIdea)
+      await loadIdeas()
+      setEditingIdea(null)
+      setEditFormData({ title: '', summary: '', content: '' })
+      setIsEditModalOpen(false)
+      showNotification('想法更新成功！', 'success')
+    } catch (error) {
+      console.error('编辑想法失败:', error)
+      showNotification('编辑想法失败，请重试', 'error')
+    }
   }
 
   const showNotification = (message, type) => {
@@ -214,17 +232,18 @@ export default function AiEeDirectory() {
   }
 
   // 确认删除 idea
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (ideaToDelete) {
-      // 使用统一的删除函数
-      deleteIdea(ideaToDelete.id)
-      
-      // 重新加载 ideas
-      loadIdeas()
-      
-      setIdeaToDelete(null)
-      setIsDeleteConfirmOpen(false)
-      showNotification('删除成功', 'success')
+      try {
+        await deleteIdea(ideaToDelete.id)
+        await loadIdeas()
+        setIdeaToDelete(null)
+        setIsDeleteConfirmOpen(false)
+        showNotification('删除成功', 'success')
+      } catch (error) {
+        console.error('删除想法失败:', error)
+        showNotification('删除想法失败，请重试', 'error')
+      }
     }
   }
 
@@ -362,10 +381,13 @@ export default function AiEeDirectory() {
       {selectedIdea && (
         <div
           className="modal-backdrop"
-          onClick={handleModalBackdropClick}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal()
+            }
+          }}
         >
           <div
-            ref={modalRef}
             className="modal-content detail-modal"
           >
             <button
@@ -427,14 +449,27 @@ export default function AiEeDirectory() {
                 />
               </div>
 
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <label className="form-label">
+                  Summary
+                </label>
+                <textarea
+                  value={newIdea.summary}
+                  onChange={(e) => setNewIdea({ ...newIdea, summary: e.target.value })}
+                  placeholder="Enter a brief summary..."
+                  rows={3}
+                  className="form-textarea"
+                />
+              </div>
+
               <div style={{ marginBottom: 'var(--space-6)' }}>
                 <label className="form-label">
-                  Content
+                  Detailed Content
                 </label>
                 <textarea
                   value={newIdea.content}
                   onChange={(e) => setNewIdea({ ...newIdea, content: e.target.value })}
-                  placeholder="Describe your idea..."
+                  placeholder="Describe your idea in detail..."
                   rows={5}
                   className="form-textarea"
                 />
@@ -494,14 +529,27 @@ export default function AiEeDirectory() {
                 />
               </div>
 
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <label className="form-label">
+                  Summary
+                </label>
+                <textarea
+                  value={editFormData.summary}
+                  onChange={(e) => setEditFormData({ ...editFormData, summary: e.target.value })}
+                  placeholder="Enter a brief summary..."
+                  rows={3}
+                  className="form-textarea"
+                />
+              </div>
+
               <div style={{ marginBottom: 'var(--space-6)' }}>
                 <label className="form-label">
-                  Content
+                  Detailed Content
                 </label>
                 <textarea
                   value={editFormData.content}
                   onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
-                  placeholder="Describe your idea..."
+                  placeholder="Describe your idea in detail..."
                   rows={5}
                   className="form-textarea"
                 />

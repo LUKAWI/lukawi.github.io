@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Mail, MapPin, Send, Github, Lock, Trash2 } from 'lucide-react'
 import { content } from '../data/content'
 import { isLoggedIn, login, logout, verifyPassword } from '../utils/auth'
+import { getMessages, saveMessage, deleteMessage } from '../utils/cloudStorage'
 import useMagnetic from '../hooks/useMagnetic'
 import useIntersectionObserver from '../hooks/useIntersectionObserver'
 import Modal from './ui/Modal'
@@ -26,6 +27,7 @@ export default function Contact() {
   const [isFadingOut, setIsFadingOut] = useState(false)
   const [errors, setErrors] = useState({})
   const [messages, setMessages] = useState([])
+  const [loadingMessages, setLoadingMessages] = useState(true)
   const [showAllMessages, setShowAllMessages] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
@@ -65,17 +67,21 @@ export default function Contact() {
     }
   }, [isVisible])
 
-  // Load messages from localStorage on mount
+  // Load messages from cloud storage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('guestbook-messages')
-    if (stored) {
+    const loadMessages = async () => {
       try {
-        const parsed = JSON.parse(stored)
-        setMessages(parsed)
+        const stored = await getMessages()
+        if (stored && stored.length > 0) {
+          setMessages(stored)
+        }
       } catch (e) {
-        console.error('Failed to parse messages:', e)
+        console.error('Failed to load messages:', e)
+      } finally {
+        setLoadingMessages(false)
       }
     }
+    loadMessages()
   }, [])
 
   // 监听登录状态
@@ -143,7 +149,6 @@ export default function Contact() {
     setIsFadingOut(false)
 
     try {
-      // Create new message
       const newMessage = {
         id: Date.now(),
         name: formData.name.trim(),
@@ -151,34 +156,38 @@ export default function Contact() {
         timestamp: new Date().toISOString(),
       }
 
-      // Add to beginning of array (newest first)
-      const updatedMessages = [newMessage, ...messages]
+      const success = await saveMessage(newMessage)
       
-      // Save to localStorage
-      localStorage.setItem('guestbook-messages', JSON.stringify(updatedMessages))
-      
-      // Update state
-      setMessages(updatedMessages)
-      setSubmitStatus('success')
-      setFormData({ name: '', message: '' })
-      setErrors({})
-      
-      // 3秒后开始淡出
-      setTimeout(() => {
-        setIsFadingOut(true)
-        // 淡出动画完成后清除状态
+      if (success) {
+        const updatedMessages = await getMessages()
+        setMessages(updatedMessages)
+        setSubmitStatus('success')
+        setFormData({ name: '', message: '' })
+        setErrors({})
+        
         setTimeout(() => {
-          setSubmitStatus(null)
-          setIsFadingOut(false)
-        }, 500)
-      }, 3000)
+          setIsFadingOut(true)
+          setTimeout(() => {
+            setSubmitStatus(null)
+            setIsFadingOut(false)
+          }, 500)
+        }, 3000)
+      } else {
+        setSubmitStatus('error')
+        
+        setTimeout(() => {
+          setIsFadingOut(true)
+          setTimeout(() => {
+            setSubmitStatus(null)
+            setIsFadingOut(false)
+          }, 500)
+        }, 3000)
+      }
     } catch (error) {
       setSubmitStatus('error')
       
-      // 3秒后开始淡出
       setTimeout(() => {
         setIsFadingOut(true)
-        // 淡出动画完成后清除状态
         setTimeout(() => {
           setSubmitStatus(null)
           setIsFadingOut(false)
@@ -267,14 +276,24 @@ export default function Contact() {
     setIsDeleteConfirmOpen(true)
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (messageToDelete) {
-      const updatedMessages = messages.filter(msg => msg.id !== messageToDelete.id)
-      localStorage.setItem('guestbook-messages', JSON.stringify(updatedMessages))
-      setMessages(updatedMessages)
-      setMessageToDelete(null)
-      setIsDeleteConfirmOpen(false)
-      showNotification('删除成功', 'success')
+      try {
+        const success = await deleteMessage(messageToDelete.id)
+        if (success) {
+          const updatedMessages = await getMessages()
+          setMessages(updatedMessages)
+          showNotification('删除成功', 'success')
+        } else {
+          showNotification('删除失败', 'error')
+        }
+      } catch (error) {
+        console.error('Failed to delete message:', error)
+        showNotification('删除失败', 'error')
+      } finally {
+        setMessageToDelete(null)
+        setIsDeleteConfirmOpen(false)
+      }
     }
   }
 
@@ -568,7 +587,22 @@ export default function Contact() {
         </div>
 
         {/* Messages Display Section */}
-        {messages.length > 0 && (
+        {loadingMessages ? (
+          <div style={{ textAlign: 'center', marginTop: 'var(--space-12)' }}>
+            <div style={{
+              display: 'inline-block',
+              width: '40px',
+              height: '40px',
+              border: '3px solid var(--color-border)',
+              borderTopColor: 'var(--color-primary-500)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <p style={{ marginTop: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+              加载留言中...
+            </p>
+          </div>
+        ) : messages.length > 0 ? (
           <div className={`reveal ${messages.length > 0 ? 'visible' : ''}`} style={{ marginTop: 'var(--space-12)' }}>
             <h3 style={{
               fontSize: 'var(--text-2xl)',
@@ -735,7 +769,7 @@ export default function Contact() {
               </div>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* 删除确认模态框 */}

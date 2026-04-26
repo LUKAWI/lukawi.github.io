@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lightbulb, PenTool } from 'lucide-react'
+import { Lightbulb, PenTool, ChevronDown, ChevronUp } from 'lucide-react'
 import { content } from '../data/content'
 import gsap from 'gsap'
 import { TextPlugin } from 'gsap/TextPlugin'
@@ -18,6 +18,7 @@ export default function Thinking() {
   })
 
   const titleTextRef = useRef(null)
+  const [expandedIdea, setExpandedIdea] = useState(null)
 
   useEffect(() => {
     if (!isVisible || !titleTextRef.current) return
@@ -110,20 +111,27 @@ export default function Thinking() {
 
         {/* Ideas Grid */}
         <div className={`grid-3 ${isVisible ? 'visible' : ''}`}>
-          {content.thinking.ideas.map((idea, index) => (
+          {content.thinking.ideas.map((idea, index) => {
+            const isExpanded = expandedIdea === idea.id
+            const isAIPlusEE = idea.title === 'AI+EE'
+            
+            return (
             <div
               key={idea.id}
               className="card card-body"
               style={{
                 animationDelay: `${index * 150}ms`,
-                cursor: idea.title === 'AI+EE' ? 'pointer' : 'default',
+                cursor: isAIPlusEE ? 'pointer' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
+                transition: 'all 0.3s ease',
               }}
               onClick={() => {
-                if (idea.title === 'AI+EE') {
+                if (isAIPlusEE) {
                   navigate('/thinking/ai-ee')
+                } else {
+                  setExpandedIdea(isExpanded ? null : idea.id)
                 }
               }}
             >
@@ -150,45 +158,94 @@ export default function Thinking() {
                   {idea.title}
                 </h3>
 
-                <p className="card-text" style={{ flex: 1, marginBottom: 'var(--space-4)' }}>{idea.content}</p>
+                <p className="card-text" style={{ flex: 1, marginBottom: 'var(--space-4)' }}>
+                  {idea.summary}
+                </p>
 
-                <span
-                  className="nav-link"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: 'var(--font-semibold)',
-                    color: 'var(--color-primary-600)',
-                    cursor: idea.title === 'AI+EE' ? 'pointer' : 'default',
-                  }}
-                  onClick={(e) => {
-                    if (idea.title === 'AI+EE') {
-                      e.stopPropagation()
-                      navigate('/thinking/ai-ee')
-                    }
-                  }}
-                >
-                  View All Ideas
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-arrow-right"
-                  >
-                    <path d="M5 12h14"></path>
-                    <path d="m12 5 7 7-7 7"></path>
-                  </svg>
-                </span>
+                {isExpanded && !isAIPlusEE && (
+                  <div style={{
+                    marginTop: 'var(--space-4)',
+                    padding: 'var(--space-4)',
+                    background: 'var(--color-bg-secondary, rgba(0,0,0,0.03))',
+                    borderRadius: 'var(--radius-md)',
+                    borderLeft: '3px solid var(--color-primary-500)',
+                  }}>
+                    <p style={{
+                      fontSize: 'var(--text-sm)',
+                      lineHeight: '1.6',
+                      color: 'var(--color-text-secondary, var(--color-text))',
+                      margin: 0,
+                    }}>
+                      {idea.detailedContent}
+                    </p>
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginTop: 'var(--space-4)',
+                }}>
+                  {!isAIPlusEE && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--color-primary-600)',
+                      fontWeight: 'var(--font-medium)',
+                    }}>
+                      {isExpanded ? (
+                        <>
+                          收起 <ChevronUp size={16} />
+                        </>
+                      ) : (
+                        <>
+                          展开详情 <ChevronDown size={16} />
+                        </>
+                      )}
+                    </span>
+                  )}
+                  {isAIPlusEE && (
+                    <span
+                      className="nav-link"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontWeight: 'var(--font-semibold)',
+                        color: 'var(--color-primary-600)',
+                        cursor: 'pointer',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate('/thinking/ai-ee')
+                      }}
+                    >
+                      View All Ideas
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-arrow-right"
+                      >
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                      </svg>
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

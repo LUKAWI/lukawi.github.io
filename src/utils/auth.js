@@ -13,7 +13,6 @@ const sha256 = async (message) => {
 
 const PASSWORD_HASH = 'e9ae0fd97bb62958cc1731e44f5ab37b9d8f6eb2a8bf15e8c8e935676f237f6d'
 const AUTH_KEY = 'dev_login_status'
-const IDEAS_KEY = 'ai-ee-ideas'
 
 export const verifyPassword = async (password) => {
   const hash = await sha256(password)
@@ -70,81 +69,4 @@ export const getLoginTime = () => {
   } catch {
     return null
   }
-}
-
-/**
- * 保存 ideas 到 localStorage
- * @param {Array} ideas - ideas 数组
- */
-export const saveIdeas = (ideas) => {
-  localStorage.setItem(IDEAS_KEY, JSON.stringify(ideas))
-}
-
-/**
- * 从 localStorage 获取 ideas
- * @returns {Array} - ideas 数组
- */
-export const getIdeas = () => {
-  const ideasData = localStorage.getItem(IDEAS_KEY)
-  if (!ideasData) return []
-  
-  try {
-    return JSON.parse(ideasData)
-  } catch {
-    return []
-  }
-}
-
-/**
- * 初始化默认 ideas（仅在首次访问时调用）
- * @param {Array} defaultIdeasData - 默认 ideas 数据数组
- * @returns {boolean} - 是否执行了初始化
- */
-export const initializeDefaultIdeas = (defaultIdeasData) => {
-  const ideasData = localStorage.getItem(IDEAS_KEY)
-  
-  // 如果已有数据，不执行初始化
-  if (ideasData) {
-    return false
-  }
-  
-  // 使用传入的默认 ideas 数据初始化
-  const defaultIdeas = defaultIdeasData.map(idea => ({
-    ...idea,
-    isDefault: true,
-    createdAt: Date.now(),
-  }))
-  
-  localStorage.setItem(IDEAS_KEY, JSON.stringify(defaultIdeas))
-  return true
-}
-
-/**
- * 删除指定 idea
- * @param {number} ideaId - 要删除的 idea ID
- */
-export const deleteIdea = (ideaId) => {
-  const ideas = getIdeas()
-  const filteredIdeas = ideas.filter(idea => idea.id !== ideaId)
-  saveIdeas(filteredIdeas)
-}
-
-/**
- * 编辑指定 idea
- * @param {number} ideaId - idea ID
- * @param {Object} updates - 要更新的字段
- */
-export const editIdea = (ideaId, updates) => {
-  const ideas = getIdeas()
-  const updatedIdeas = ideas.map(idea => {
-    if (idea.id === ideaId) {
-      return {
-        ...idea,
-        ...updates,
-        updatedAt: Date.now(),
-      }
-    }
-    return idea
-  })
-  saveIdeas(updatedIdeas)
 }

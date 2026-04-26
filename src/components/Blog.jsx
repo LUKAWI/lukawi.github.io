@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { Calendar, Clock, ArrowRight } from 'lucide-react'
+import { Calendar, ArrowRight } from 'lucide-react'
 import { content } from '../data/content'
 import useIntersectionObserver from '../hooks/useIntersectionObserver'
 import FallbackImage from './ui/FallbackImage'
@@ -109,11 +109,7 @@ export default function Blog() {
                 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
                     <Calendar size={14} />
-                    {post.date}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
-                    <Clock size={14} />
-                    {post.readTime}
+                    施工中
                   </span>
                 </div>
 

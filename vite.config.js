@@ -2,9 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // GitHub Pages 部署配置
-// 如果仓库名为 username.github.io，base 应为 '/'
-// 如果仓库名为 other-repo，base 应为 '/other-repo/'
-const base = '/portfolio/'
+// 仓库名: lukawi.github.io，base 应为 '/'
+const base = '/'
 
 export default defineConfig({
   plugins: [react()],

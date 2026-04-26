@@ -32,6 +32,9 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_GITHUB_TOKEN: ${{ secrets.VITE_GITHUB_TOKEN }}
+          VITE_GIST_ID: ${{ secrets.VITE_GIST_ID }}
         run: npm run build
 
       - name: Upload artifact
